@@ -7,6 +7,7 @@
 //
 
 #import "BKTouchIDSwitchView.h"
+#import <LocalAuthentication/LocalAuthentication.h>
 
 @implementation BKTouchIDSwitchView
 
@@ -28,6 +29,27 @@
     return self;
 }
 
++ (BOOL)isFaceIDAvailable {
+    if (![LAContext class]) return NO;
+    
+    LAContext *myContext = [[LAContext alloc] init];
+    NSError *authError = nil;
+    if (![myContext canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&authError]) {
+        NSLog(@"%@", [authError localizedDescription]);
+        return NO;
+    }
+    
+    if (@available(iOS 11.0, *)) {
+        if (myContext.biometryType == LABiometryTypeFaceID){
+            return YES;
+        } else {
+            return NO;
+        }
+    } else {
+        return NO;
+    }
+}
+
 - (void)_initialize
 {
     self.switchBackgroundView = [[UIView alloc] init];
@@ -40,12 +62,22 @@
     self.messageLabel.numberOfLines = 0;
     self.messageLabel.lineBreakMode = NSLineBreakByWordWrapping;
     self.messageLabel.textAlignment = NSTextAlignmentCenter;
-    self.messageLabel.text = NSLocalizedStringFromTable(@"Do you want to use Touch ID for authentication?", @"BKPasscodeView", @"Touch ID를 사용하시겠습니까?");
+//    self.messageLabel.text = NSLocalizedStringFromTable(@"Do you want to use Touch ID for authentication?", @"BKPasscodeView", @"Touch ID를 사용하시겠습니까?");
+    if ([BKTouchIDSwitchView isFaceIDAvailable]) {
+        self.messageLabel.text = @"Do you want to use Face ID for authentication?";
+    } else {
+        self.messageLabel.text = @"Do you want to use Touch ID for authentication?";
+    }
     self.messageLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
     [self addSubview:self.messageLabel];
     
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.text = NSLocalizedStringFromTable(@"Enable Touch ID", @"BKPasscodeView", @"Touch ID 사용");
+//    self.titleLabel.text = NSLocalizedStringFromTable(@"Enable Touch ID", @"BKPasscodeView", @"Touch ID 사용");
+    if ([BKTouchIDSwitchView isFaceIDAvailable]) {
+        self.titleLabel.text = @"Enable Face ID";
+    } else {
+        self.titleLabel.text = @"Enable Touch ID";
+    }
     self.titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
     [self addSubview:self.titleLabel];
     
